@@ -2,6 +2,7 @@ package config
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
 	"log/slog"
@@ -17,17 +18,23 @@ type Config struct {
 type App struct {
 	Name    string `yaml:"name"`
 	Profile string
+	Logging
+}
+
+type Logging struct {
+	Level  string `yaml:"level" env-default:"debug"`
+	Format string `yaml:"format" env-default:"text"`
 }
 
 type HTTPServer struct {
-	Port string `yaml:"port"`
+	Port        string `yaml:"port" env-default:"8080"`
+	PrintRoutes bool   `yaml:"print-routes" env-default:"true"`
 }
 
-func New(env string) *Config {
+func Load(env string) (*Config, error) {
 	configDir := os.Getenv("APP_CONFIG_DIR")
 	if configDir == "" {
-		slog.Error("Undefined config directory", "env", env)
-		os.Exit(1)
+		return nil, errors.New("undefined config directory")
 	}
 
 	slog.Info("Using config directory", "dir", configDir)
@@ -35,9 +42,16 @@ func New(env string) *Config {
 
 	var cfg Config
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		slog.Error("Failed to parse config file", "error", err, "env", env)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
 
-	return &cfg
+	return &cfg, nil
+}
+
+func MustLoad(env string) *Config {
+	value, err := Load(env)
+	if err != nil {
+		panic(fmt.Errorf("failed to load config: %w", err))
+	}
+	return value
 }
