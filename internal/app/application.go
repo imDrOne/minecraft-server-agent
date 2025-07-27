@@ -26,7 +26,7 @@ type Application struct {
 	env     string
 	config  *config.Config
 	logger  *slog.Logger
-	servers []Server
+	servers map[string]Server
 }
 
 func (app *Application) Logger() *slog.Logger {
@@ -40,7 +40,7 @@ func NewApplication(env string) *Application {
 		env:     env,
 		config:  cfg,
 		logger:  l,
-		servers: make([]Server, 0),
+		servers: make(map[string]Server),
 	}
 }
 
@@ -48,9 +48,17 @@ func (app *Application) Config() *config.Config {
 	return app.config
 }
 
-func (app *Application) AddServer(server Server) {
-	app.servers = append(app.servers, server)
-	app.logger.Debug("server registered", "name", server.Name()) // V
+func (app *Application) AddServer(server Server, consumer func(*Application)) {
+	if _, ok := app.servers[server.Name()]; !ok {
+		app.servers[server.Name()] = server
+		consumer(app)
+		app.logger.Debug("server registered", "name", server.Name())
+	}
+	app.logger.Debug("server already registered", "name", server.Name())
+}
+
+func (app *Application) GetServer(name string) Server {
+	return app.servers[name]
 }
 
 func (app *Application) Run() error {

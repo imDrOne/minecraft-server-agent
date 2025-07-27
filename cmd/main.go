@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/imDrOne/minecraft-server-agent/internal/app"
+	httprouter "github.com/imDrOne/minecraft-server-agent/internal/controller/http"
 	"github.com/imDrOne/minecraft-server-agent/internal/pkg/http_server"
 	"os"
 )
@@ -20,7 +21,9 @@ func main() {
 		http_server.WithAppName(config.Name),
 	)
 
-	application.AddServer(httpServer)
+	application.AddServer(httpServer, func(app *app.Application) {
+		httprouter.RegisterRoutes(application, httpServer)
+	})
 
 	if err := application.Run(); err != nil {
 		logger.Error("error during application start", "error", err, "env", *env)

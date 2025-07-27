@@ -14,7 +14,7 @@ func WithPort(value string) HttpOption {
 
 func WithAppName(value string) HttpOption {
 	return func(s *HttpServer) {
-		s.name = value
+		s.name = HttpServerPrefixName + value
 	}
 }
 
