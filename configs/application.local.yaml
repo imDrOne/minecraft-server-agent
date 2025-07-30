@@ -1,0 +1,7 @@
+app:
+  name: api-server-agent
+  logging:
+    format: 'text'
+
+http-server:
+    port: 8080
